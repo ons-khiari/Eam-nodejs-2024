@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Reservation</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    .notification {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background-color: #e0ffe0;
+    }
+  </style>
+</head>
+<body>
+  <h1>page de reservation</h1>
+  <form id="reserverSocketForm">
+
+    <label for="hotel">ID Hotel:</label>
+    <input type="text" id="hotel" name="hotel" required>
+    <br>
+    <label for="chambre">ID Chambre:</label>
+    <input type="text" id="chambre" name="chambre" required>
+    <br>
+
+    <button type="submit">Reserver</button>
+  </form>
+
+  <button id="showChambresButton">Afficher Chambres</button>
+  <div id="chambres" class="chambres" style="display: none;"></div>
+
+  <div id="notification" class="notification" style="display: none;"></div>
+  <script>
+    const socket = io();
+    const nom_client = prompt("Please enter your name");
+    socket.emit('enterName', nom_client);
+
+    document.getElementById('reserverSocketForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const hotel = document.getElementById('hotel').value;
+        const chambre = document.getElementById('chambre').value;
+
+        console.log("Emitting reserverSocket event with data:", { hotel, chambre });
+        socket.emit('rserverSocket', { hotel, chambre });
+    });
+
+    socket.on('chambreAdded', (data) => {
+        console.log("Received chambreAdded event with data:", data);
+        const notificationDiv = document.getElementById('notification');
+        notificationDiv.style.display = 'block';
+        notificationDiv.innerHTML = `
+        <p>Reservation added successfully!</p>
+        <p><strong>Numero:</strong> ${data.nom}</p>
+        <p><strong>Joueur 1 ID:</strong> ${data.joueur1}</p>
+        <p><strong>Joueur 2 ID:</strong> ${data.joueur2}</p>
+        <p><strong>Etat:</strong> ${data.etat}</p>
+        `;
+    });
+
+     socket.on('error', (error) => {
+        console.log("Received error event with message:", error.message);
+        alert('Error: ' + error.message);
+    });
+
+    document.getElementById('showChambresButton').addEventListener('click', function() {
+        socket.emit('getAllSocket');
+    });
+
+    // list all chambres
+    socket.on('chambresGetAll', (chambres) => {
+        console.log("Received chambresGetAll event with data:", chambres);
+        const chambresDiv = document.getElementById('chambres');
+        chambresDiv.style.display = 'block';
+        chambresDiv.innerHTML = `
+        <h2>Chambres</h2>
+        <ul>
+          ${chambres.map(chambre => `<li>${chambre.numero} - ${chambre.hotel} - ${chambre.reservee} - ${chambre.nom_client}</li>`).join('')}
+        </ul>
+        `;
+    });
+
+    
+
+  </script>
+</body>
+</html>
